@@ -88,7 +88,7 @@ for i, url in enumerate(urls):
     # get description (first comment)
     desc_el = chrome.find_elements_by_css_selector(selectors['desc'])
     if len(desc_el) > 1:
-        post.desc = desc_el[1].text.replace('\n', '').encode('utf-8').decode('latin-1')
+        post.desc = desc_el[0].text.replace('\n', '').encode('utf-8').decode('latin-1')
         # TODO: explain https://github.com/gevent/gevent/issues/614
         #       replace \n by space
         
