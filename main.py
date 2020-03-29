@@ -33,11 +33,11 @@ selectors = {
     'num_following': 'header ul li:nth-child(3) span',
     
     'posts': 'main article a',
-    'desc': 'article ul li[role=menuitem] span',
+    'desc': 'article ul li[role=menuitem] div span:not([role=link])',
     'img': 'main article > div img',
-    'local': 'header a',
-    'lat': 'meta[property="place:location:latitude"]',
-    'lng': 'meta[property="place:location:longitude"]',
+    'local': 'header a[href*=locations]',
+    'lat': 'meta[property*=latitude]',
+    'lng': 'meta[property*=longitude]',
 }
 
 
@@ -61,7 +61,7 @@ profile.save()
     
 
 # Scroll untill all pictures are visible
-urls = set()
+urls = []
 while len(urls) < profile.num_posts:
     
     if args.debug: print('Scroll down... ', end='')
@@ -69,7 +69,9 @@ while len(urls) < profile.num_posts:
     sleep(1)
     
     for a in chrome.find_elements_by_css_selector( selectors['posts'] ):
-        urls.add(a.get_attribute('href'))
+        href = a.get_attribute('href')
+        if href not in urls:
+            urls.append(href)
     
     if args.debug: print('found', len(urls), 'of', profile.num_posts)
 
@@ -83,12 +85,12 @@ for i, url in enumerate(urls):
     
     # Navigate to post url
     chrome.get(url)
-    chrome.get_screenshot_as_file('post.png')
+    if args.debug: chrome.get_screenshot_as_file('data/{}/post{}.png'.format(profile.username, i))
     
     # get description (first comment)
     desc_el = chrome.find_elements_by_css_selector(selectors['desc'])
-    if len(desc_el) > 1:
-        post.desc = desc_el[0].text.replace('\n', '').encode('utf-8').decode('latin-1')
+    if len(desc_el) > 0:
+        post.desc = desc_el[0].text.replace('\n', ' ')
         # TODO: explain https://github.com/gevent/gevent/issues/614
         #       replace \n by space
         
@@ -99,18 +101,19 @@ for i, url in enumerate(urls):
     # get locations
     local_el = chrome.find_elements_by_css_selector(selectors['local'])
     if len(local_el) > 0:
-        href = local_el[-1].get_attribute('href')
+        href = local_el[0].get_attribute('href')
     
         if 'locations' in href:
             chrome.get(href)
+            if args.debug: chrome.get_screenshot_as_file('data/{}/loc{}.png'.format(profile.username, i))
             
             lat_metas = chrome.find_elements_by_css_selector(selectors['lat'])
             if len(lat_metas) > 0:
-                lat = lat_metas[0].get_attribute('content')
+                post.lat = lat_metas[0].get_attribute('content')
             
             lng_metas = chrome.find_elements_by_css_selector(selectors['lng'])
             if len(lng_metas) > 0:
-                lng = lng_metas[0].get_attribute('content')
+                post.lng = lng_metas[0].get_attribute('content')
     
     if args.debug: print('Saved', post)
     post.save()

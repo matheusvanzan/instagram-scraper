@@ -45,7 +45,8 @@ class Post:
         
     def __repr__(self):
         lenght = max(len(self.desc), 30)
-        return '<Post {} {}...>'.format(self.id_, self.desc[:lenght])
+        return '<Post {}: ({}, {}) {}...>'.format(
+            self.id_, self.lat, self.lng, self.desc[:lenght])
         
     def download_img(self, src):
         filename = '{}/{}.png'.format(self.profile.directory, self.id_)
